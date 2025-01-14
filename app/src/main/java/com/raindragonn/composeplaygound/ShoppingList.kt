@@ -1,6 +1,7 @@
 package com.raindragonn.composeplaygound
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,9 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -70,12 +73,31 @@ fun ShoppingListApp(modifier: Modifier) {
 			items(
 				sItems,
 				key = { it.id }
-			) {
-				ShoppingListItem(
-					it,
-					onEditClick = {},
-					onDeleteClick = { sItems = sItems - it },
-				)
+			) { item ->
+				if (item.isEditing) {
+					ShoppingListItemEditor(
+						item = item,
+						onEditComplete = { name, quantity ->
+							sItems = sItems.map {
+								if (it.id == item.id) {
+									item.copy(name = name, quantity = quantity, isEditing = false)
+								} else {
+									it.copy()
+								}
+							}
+						},
+					)
+				} else {
+					ShoppingListItem(
+						item = item,
+						onEditClick = {
+							sItems = sItems.map { it.copy(isEditing = it.id == item.id) }
+						},
+						onDeleteClick = {
+							sItems = sItems - item
+						}
+					)
+				}
 			}
 		}
 	}
@@ -103,8 +125,9 @@ fun ShoppingListItem(
 			.fillMaxWidth()
 			.border(
 				border = BorderStroke(2.dp, Color.Black),
-				shape = RoundedCornerShape(20)
+				shape = RoundedCornerShape(20),
 			),
+		horizontalArrangement = Arrangement.SpaceBetween
 	) {
 		Text(text = item.name, modifier = Modifier.padding(8.dp))
 		Text(text = "Qty: ${item.quantity}", modifier = Modifier.padding(8.dp))
@@ -135,8 +158,38 @@ fun ShoppingListItemEditor(
 ) {
 	var eName by remember { mutableStateOf(item.name) }
 	var eQuantity by remember { mutableStateOf(item.quantity.toString()) }
-	var isEditing by remember { mutableStateOf(item) }
 
+	Row(
+		modifier = modifier
+			.fillMaxWidth()
+			.background(Color.White)
+			.padding(8.dp),
+		horizontalArrangement = Arrangement.SpaceEvenly
+	) {
+		Column {
+			BasicTextField(
+				eName,
+				singleLine = true,
+				onValueChange = { eName = it },
+				modifier = Modifier
+					.wrapContentSize()
+					.padding(8.dp)
+			)
+			BasicTextField(
+				eQuantity,
+				singleLine = true,
+				onValueChange = { eQuantity = it },
+				modifier = Modifier
+					.wrapContentSize()
+					.padding(8.dp)
+			)
+		}
+		Button(onClick = {
+			onEditComplete(eName, eQuantity.toIntOrNull() ?: 1)
+		}) {
+			Text("Save")
+		}
+	}
 }
 
 
